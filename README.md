@@ -40,8 +40,8 @@ func main() {
     http.Handle("/example", g.Use(rpc.NewHandler(Example, schema), MyCustomMiddleware, AnotherMiddleware, ...etc))
 
     // Basic: same applies
-    http.Handle("/example_get", g.Use(basic.NewHandler(basic.GetParams, Example)), MyCustomMiddleware)
-    http.Handle("/example_post", g.Use(basic.NewHandler(basic.PostForm, Example)), MyCustomMiddleware)
+    http.Handle("/example_get", g.Use(basic.NewHandler(basic.GetParams, Example), MyCustomMiddleware))
+    http.Handle("/example_post", g.Use(basic.NewHandler(basic.PostForm, Example), MyCustomMiddleware))
 
     // listen!
     http.ListenAndServe(":8000")
@@ -50,7 +50,7 @@ func main() {
 
 ### RPC handlers
 
-RPC handler function signatures are like so:
+Function signatures are like so:
 
 ```go
 func Example(ctx context.Context, req *SomeInputType) (*YourOutput, error)
@@ -74,11 +74,12 @@ therefore all fields need to have the correct struct tags.
 They differ slightly from RPC requests in that the response must be of type
 `*basic.Response`. This type has the following fields:
 
-* Body
-* StatusCode
-* Headers
+* Body (`string`)
+* StatusCode (`int`)
+* Headers (`map[string]string`)
 
-Technically all of these are optional, but once set will return the correct response to the client.
+All of these are optional, but once set will return the correct response to the
+client.
 
 If no status code is set, it default to 200. If no headers are set, it default
 to `Content-Type: text/plain` only.
