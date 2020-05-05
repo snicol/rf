@@ -46,9 +46,9 @@ func example_mux() {
 	mux := http.NewServeMux()
 
 	logger := logrus.New()
-	rpcGroup := rf.NewHandlerGroup(rpc.DefaultMiddleware(), middleware.Logger(logger))
+	g := rf.NewHandlerGroup(rpc.DefaultMiddleware(), middleware.Logger(logger))
 
-	mux.Handle("/example", rpcGroup.Use(rpc.NewHandler(Example, schema)))
+	mux.Handle("/example", g.Use(rpc.NewHandler(Example, schema)))
 
 	http.ListenAndServe(":3003", mux)
 }
