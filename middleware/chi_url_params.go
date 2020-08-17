@@ -4,8 +4,9 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/go-chi/chi"
 	"github.com/snicol/rf"
+
+	"github.com/go-chi/chi"
 )
 
 // ChiURLParams merges URL params (/books/{id}) into the *http.Request params
