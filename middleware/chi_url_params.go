@@ -19,13 +19,26 @@ func ChiURLParams() func(next rf.HandlerFunc) rf.HandlerFunc {
 				return errors.New("no chi Context found on request ctx - is Chi being used on this route?")
 			}
 
+			if len(rctx.URLParams.Keys) == 0 {
+				return next(w, r)
+			}
+
 			values := r.URL.Query()
+
+			err := r.ParseForm()
+			if err != nil {
+				return err
+			}
+
+			form := r.PostForm
 
 			for i := 0; i < len(rctx.URLParams.Keys); i++ {
 				values.Set(rctx.URLParams.Keys[i], rctx.URLParams.Values[i])
+				form.Set(rctx.URLParams.Keys[i], rctx.URLParams.Values[i])
 			}
 
 			r.URL.RawQuery = values.Encode()
+			r.PostForm = form
 
 			return next(w, r)
 		}
