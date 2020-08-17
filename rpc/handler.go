@@ -72,6 +72,11 @@ func (rpc *Handler) Handle() rf.HandlerFunc {
 			return err.Interface().(error)
 		}
 
+		if res := out[0]; res.IsNil() {
+			result(w, "", http.StatusNoContent, nil)
+			return nil
+		}
+
 		resp, err := json.Marshal(out[0].Interface())
 		if err != nil {
 			return err
