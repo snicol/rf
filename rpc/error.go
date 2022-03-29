@@ -9,12 +9,11 @@ import (
 	"github.com/snicol/yael"
 )
 
-func (rpc *Handler) Error() rf.ErrorHandlerFunc {
+func (rpc *Handler[Req, Res]) Error() rf.ErrorHandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request, err error) {
-		var v interface{} = err
-		yaelErr, ok := v.(*yael.E)
+		yaelErr, ok := err.(*yael.E)
 		if !ok {
-			result(w, "unknown error", http.StatusInternalServerError, nil)
+			yaelErr = yael.New("unknown")
 			return
 		}
 

@@ -5,79 +5,43 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"reflect"
 
 	"github.com/snicol/rf"
-
 	"github.com/snicol/yael"
 	"github.com/xeipuuv/gojsonschema"
 )
 
-func (rpc *Handler) Handle() rf.HandlerFunc {
+func (h *Handler[Req, Res]) Handle() rf.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		ctx := r.Context()
-
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			return err
 		}
 
-		bodyLoader := gojsonschema.NewBytesLoader(body)
-		res, err := gojsonschema.Validate(rpc.schema, bodyLoader)
-		if err != nil {
-			return err
-		}
-
-		if !res.Valid() {
-			err := yael.New(yael.BadRequest)
-
-			err.Meta = map[string]interface{}{
-				"schema_error": make([]map[string]interface{}, len(res.Errors())),
-			}
-
-			for i, reason := range res.Errors() {
-				seMeta := err.Meta["schema_error"].([]map[string]interface{})
-				seMeta[i] = map[string]interface{}{
-					"description": reason.Description(),
-					"field":       reason.Field(),
-					"type":        reason.Type(),
-				}
-			}
-
+		if err := validateBody(body, h.schema); err != nil {
 			return err
 		}
 
 		r.Body.Close()
 		r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 
-		fn := rpc.fn
-
-		v := reflect.ValueOf(fn)
-		t := v.Type()
-
-		req := reflect.New(t.In(1).Elem())
-		err = json.NewDecoder(r.Body).Decode(req.Interface())
+		var req Req
+		err = json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
 			return err
 		}
 
-		inputs := []reflect.Value{
-			reflect.ValueOf(ctx),
-			req,
+		res, err := h.fn(r.Context(), req)
+		if err != nil {
+			return err
 		}
 
-		out := v.Call(inputs)
-
-		if err := out[1]; !err.IsNil() {
-			return err.Interface().(error)
-		}
-
-		if res := out[0]; res.IsNil() {
+		if res == *new(Res) {
 			result(w, "", http.StatusNoContent, nil)
 			return nil
 		}
 
-		resp, err := json.Marshal(out[0].Interface())
+		resp, err := json.Marshal(res)
 		if err != nil {
 			return err
 		}
@@ -85,6 +49,39 @@ func (rpc *Handler) Handle() rf.HandlerFunc {
 		result(w, string(resp), http.StatusOK, &defaultContentType)
 		return nil
 	}
+}
+
+func validateBody(body []byte, schema gojsonschema.JSONLoader) error {
+	if schema == nil {
+		return nil
+	}
+
+	bodyLoader := gojsonschema.NewBytesLoader(body)
+	schemaRes, err := gojsonschema.Validate(schema, bodyLoader)
+	if err != nil {
+		return err
+	}
+
+	if schemaRes.Valid() {
+		return nil
+	}
+
+	yErr := yael.New(yael.BadRequest)
+
+	yErr.Meta = map[string]interface{}{
+		"schema_error": make([]map[string]interface{}, len(schemaRes.Errors())),
+	}
+
+	for i, reason := range schemaRes.Errors() {
+		seMeta := yErr.Meta["schema_error"].([]map[string]interface{})
+		seMeta[i] = map[string]interface{}{
+			"description": reason.Description(),
+			"field":       reason.Field(),
+			"type":        reason.Type(),
+		}
+	}
+
+	return yErr
 }
 
 func result(w http.ResponseWriter, body string, statusCode int, contentType *string) {
