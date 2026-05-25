@@ -1,7 +1,6 @@
 package rpc
 
 import (
-	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -18,17 +17,17 @@ func (h *Handler[Req, Res]) Handle() rf.HandlerFunc {
 			return err
 		}
 
+		r.Body.Close()
+
 		if err := validateBody(body, h.schema); err != nil {
 			return err
 		}
 
-		r.Body.Close()
-		r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
-
 		var req Req
-		err = json.NewDecoder(r.Body).Decode(&req)
-		if err != nil {
-			return err
+		if len(body) > 0 {
+			if err = json.Unmarshal(body, &req); err != nil {
+				return err
+			}
 		}
 
 		res, err := h.fn(r.Context(), req)
