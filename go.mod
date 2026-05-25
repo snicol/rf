@@ -4,7 +4,7 @@ go 1.23
 
 require (
 	github.com/go-chi/chi/v5 v5.3.0
-	github.com/gorilla/schema v1.1.0
+	github.com/gorilla/schema v1.4.1
 	github.com/snicol/yael v0.0.0-20200504191458-dca710d34709
 	github.com/xeipuuv/gojsonschema v1.2.0
 )
