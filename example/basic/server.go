@@ -10,7 +10,8 @@ import (
 	"github.com/snicol/rf/basic"
 	"github.com/snicol/rf/middleware"
 
-	"github.com/sirupsen/logrus"
+	"log/slog"
+	"os"
 )
 
 type Request struct {
@@ -43,7 +44,7 @@ func JSONEchoExample(ctx context.Context, req *Request) (*basic.Response, error)
 
 func main() {
 	mux := http.NewServeMux()
-	logger := logrus.New()
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	g := rf.NewHandlerGroup(nil, middleware.Logger(logger))
 
