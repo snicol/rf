@@ -13,7 +13,9 @@ func (rpc *Handler[Req, Res]) Error() rf.ErrorHandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request, err error) {
 		yaelErr, ok := err.(*yael.E)
 		if !ok {
-			yaelErr = yael.New("unknown")
+			unknown := yael.New("unknown")
+			unknownJSON, _ := json.Marshal(unknown)
+			result(w, string(unknownJSON), http.StatusInternalServerError, &defaultContentType)
 			return
 		}
 
