@@ -6,7 +6,7 @@ import (
 
 	"github.com/snicol/rf"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 )
 
 // ChiURLParams merges URL params (/books/{id}) into the *http.Request params
