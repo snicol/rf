@@ -8,9 +8,11 @@ import (
 	"github.com/snicol/rf/middleware"
 	"github.com/snicol/rf/rpc"
 
-	"github.com/go-chi/chi"
-	chiMiddleware "github.com/go-chi/chi/middleware"
-	"github.com/sirupsen/logrus"
+	"log/slog"
+	"os"
+
+	"github.com/go-chi/chi/v5"
+	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/xeipuuv/gojsonschema"
 )
 
@@ -45,7 +47,7 @@ var schema = gojsonschema.NewStringLoader(`{
 func example_mux() {
 	mux := http.NewServeMux()
 
-	logger := logrus.New()
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	g := rf.NewHandlerGroup(rpc.DefaultMiddleware(), middleware.Logger(logger))
 
 	mux.Handle("/example", g.Use(rpc.NewHandler(Example, schema)))
@@ -59,7 +61,7 @@ func main() {
 	r.Use(chiMiddleware.RequestID)
 	r.Use(chiMiddleware.StripSlashes)
 
-	logger := logrus.New()
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	g := rf.NewHandlerGroup(rpc.DefaultMiddleware(), middleware.Logger(logger))
 
 	r.Post("/example", g.Use(rpc.NewHandler(Example, schema)))

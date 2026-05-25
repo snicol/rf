@@ -2,7 +2,7 @@ package rpc
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/snicol/rf"
@@ -12,7 +12,7 @@ import (
 
 func (h *Handler[Req, Res]) Handle() rf.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		body, err := ioutil.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			return err
 		}

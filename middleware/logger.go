@@ -1,65 +1,68 @@
 package middleware
 
 import (
-	"encoding/json"
+	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/snicol/rf"
-
-	"github.com/sirupsen/logrus"
 	"github.com/snicol/yael"
 )
 
 const LoggerKey = "logger"
 
-func Logger(logger *logrus.Logger) rf.MiddlewareFunc {
+func Logger(logger *slog.Logger) rf.MiddlewareFunc {
+	if logger == nil {
+		logger = slog.Default()
+	}
 	return func(next rf.HandlerFunc) rf.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) error {
-			entry := logger.WithFields(logrus.Fields{
-				"http_method": r.Method,
-				"http_path":   r.URL.Path,
-			})
+			sr := &statusRecorder{ResponseWriter: w}
 
 			start := time.Now()
-			err := next(w, r)
-			end := time.Now()
+			err := next(sr, r)
 
-			dur := end.Sub(start)
-
-			entry = entry.WithFields(logrus.Fields{
-				"req_duration_us": dur.Microseconds(),
-			})
+			base := logger.With(
+				slog.String("http_method", r.Method),
+				slog.String("http_path", r.URL.Path),
+				slog.Int64("req_duration_us", time.Since(start).Microseconds()),
+			)
 
 			if err == nil {
-				entry.WithFields(logrus.Fields{
-					"http_status_code": http.StatusOK,
-				}).Info("request handled")
-
+				base.Info("request handled", slog.Int("http_status_code", sr.statusCode()))
 				return nil
 			}
 
 			yaelErr, ok := err.(*yael.E)
 			if !ok {
-				entry.WithFields(logrus.Fields{
-					"error": err.Error(),
-				}).Error("internal server error")
-
+				base.Error("internal server error", slog.String("error", err.Error()))
 				return err
 			}
 
-			ym, jErr := json.Marshal(yaelErr.Meta)
-			if jErr != nil {
-				return jErr
-			}
-
-			entry.WithFields(logrus.Fields{
-				"code":             yaelErr.Code,
-				"meta":             string(ym),
-				"http_status_code": yael.StatusCode(*yaelErr),
-			}).Warn(yaelErr.Code)
+			base.Warn(yaelErr.Code,
+				slog.String("code", yaelErr.Code),
+				slog.Any("meta", yaelErr.Meta),
+				slog.Int("http_status_code", yael.StatusCode(*yaelErr)),
+			)
 
 			return err
 		}
 	}
+}
+
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (sr *statusRecorder) WriteHeader(code int) {
+	sr.status = code
+	sr.ResponseWriter.WriteHeader(code)
+}
+
+func (sr *statusRecorder) statusCode() int {
+	if sr.status == 0 {
+		return http.StatusOK
+	}
+	return sr.status
 }
