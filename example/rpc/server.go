@@ -49,6 +49,7 @@ func example_mux() {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	g := rf.NewHandlerGroup(rpc.DefaultMiddleware(), middleware.Logger(logger))
+	g := rf.NewHandlerGroup(rpc.DefaultMiddleware(), middleware.Logger(logger), middleware.Recover(logger))
 
 	mux.Handle("/example", g.Use(rpc.NewHandler(Example, schema)))
 
@@ -63,6 +64,7 @@ func main() {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	g := rf.NewHandlerGroup(rpc.DefaultMiddleware(), middleware.Logger(logger))
+	g := rf.NewHandlerGroup(rpc.DefaultMiddleware(), middleware.Logger(logger), middleware.Recover(logger))
 
 	r.Post("/example", g.Use(rpc.NewHandler(Example, schema)))
 

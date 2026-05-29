@@ -47,6 +47,7 @@ func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	g := rf.NewHandlerGroup(nil, middleware.Logger(logger))
+	g := rf.NewHandlerGroup(nil, middleware.Logger(logger), middleware.Recover(logger))
 
 	mux.Handle("/example", g.Use(basic.NewHandler(basic.GetParams, Example)))
 	mux.Handle("/json_echo", g.Use(basic.NewHandler(basic.GetParams, JSONEchoExample)))
