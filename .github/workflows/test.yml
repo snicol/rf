@@ -8,7 +8,6 @@ on:
 permissions:
   contents: read
   checks: write
-  pull-requests: write
 
 jobs:
   test:
@@ -18,12 +17,17 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - uses: reviewdog/action-setup@v1
       - name: Test
-        env:
-          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -o pipefail
-          go test -json ./... 2>&1 | reviewdog -f=go-test-json -reporter=github-check -name=test
+          go test -json ./... | tee report.json
+      - name: Test Summary
+        uses: dorny/test-reporter@v3
+        if: always()
+        with:
+          name: Go Tests
+          path: report.json
+          reporter: golang-json
+          fail-on-error: true
       - name: Build examples
         run: go build ./example/...
