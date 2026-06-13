@@ -11,8 +11,10 @@ import (
 	"github.com/snicol/rf"
 )
 
+// LoggerKey is the context key used to store the logger instance.
 const LoggerKey = "logger"
 
+// Logger returns middleware that logs each request with timing and status information.
 func Logger(logger *slog.Logger) rf.MiddlewareFunc {
 	if logger == nil {
 		logger = slog.Default()

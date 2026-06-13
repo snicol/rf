@@ -1,7 +1,9 @@
+// Package middleware provides rf-compatible middleware functions.
 package middleware
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/snicol/rf"
@@ -26,9 +28,8 @@ func ChiURLParams() func(next rf.HandlerFunc) rf.HandlerFunc {
 
 			values := r.URL.Query()
 
-			err := r.ParseForm()
-			if err != nil {
-				return err
+			if err := r.ParseForm(); err != nil {
+				return fmt.Errorf("parsing form: %w", err)
 			}
 
 			form := r.PostForm

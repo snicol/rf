@@ -10,6 +10,7 @@ import (
 	"github.com/snicol/rf"
 )
 
+// Recover returns middleware that recovers from panics and logs them.
 func Recover(logger *slog.Logger) rf.MiddlewareFunc {
 	if logger == nil {
 		logger = slog.Default()

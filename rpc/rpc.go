@@ -1,4 +1,5 @@
-package rpc
+// Package rpc provides a JSON-based RPC handler with jsonschema validation and yael error handling.
+package rpc //nolint:revive // name matches the RPC domain, stdlib net/rpc conflict is acceptable
 
 import (
 	"context"
@@ -16,6 +17,7 @@ type Handler[Req any, Res comparable] struct {
 	schema gojsonschema.JSONLoader
 }
 
+// RPCHandlerFunc is the function signature required for RPC handler functions.
 type RPCHandlerFunc[Req any, Res comparable] func(context.Context, Req) (Res, error)
 
 // NewHandler returns a handler instance with the provided handler function and

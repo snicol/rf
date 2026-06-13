@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -11,14 +12,15 @@ import (
 	"github.com/snicol/rf"
 )
 
+// Handle returns the rf.HandlerFunc for this RPC handler.
 func (h *Handler[Req, Res]) Handle() rf.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
-			return err
+			return fmt.Errorf("reading body: %w", err)
 		}
 
-		r.Body.Close()
+		_ = r.Body.Close() //nolint:errcheck // body close errors after ReadAll are not actionable
 
 		if err := validateBody(body, h.schema); err != nil {
 			return err
@@ -26,8 +28,8 @@ func (h *Handler[Req, Res]) Handle() rf.HandlerFunc {
 
 		var req Req
 		if len(body) > 0 {
-			if err = json.Unmarshal(body, &req); err != nil {
-				return err
+			if err := json.Unmarshal(body, &req); err != nil {
+				return fmt.Errorf("unmarshalling body: %w", err)
 			}
 		}
 
@@ -43,7 +45,7 @@ func (h *Handler[Req, Res]) Handle() rf.HandlerFunc {
 
 		resp, err := json.Marshal(res)
 		if err != nil {
-			return err
+			return fmt.Errorf("marshaling response: %w", err)
 		}
 
 		result(w, string(resp), http.StatusOK, defaultContentType)
@@ -61,7 +63,7 @@ func validateBody(body []byte, schema gojsonschema.JSONLoader) error {
 
 	schemaRes, err := gojsonschema.Validate(schema, bodyLoader)
 	if err != nil {
-		return err
+		return fmt.Errorf("validating schema: %w", err)
 	}
 
 	if schemaRes.Valid() {
@@ -75,6 +77,7 @@ func validateBody(body []byte, schema gojsonschema.JSONLoader) error {
 	}
 
 	for i, reason := range schemaRes.Errors() {
+		//nolint:forcetypeassert,errcheck,revive // key was set two lines above
 		seMeta := yErr.Meta["schema_error"].([]map[string]any)
 
 		seMeta[i] = map[string]any{
@@ -94,5 +97,6 @@ func result(w http.ResponseWriter, body string, statusCode int, contentType stri
 
 	w.Header().Add("Content-Type", contentType)
 	w.WriteHeader(statusCode)
-	w.Write([]byte(body))
+
+	_, _ = w.Write([]byte(body)) //nolint:errcheck // response write errors are not actionable
 }

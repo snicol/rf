@@ -1,3 +1,4 @@
+// Package rf provides a lightweight HTTP handler abstraction with middleware support.
 package rf
 
 import (
@@ -58,7 +59,5 @@ func (hs *HandlerGroup) Use(h Handler, mws ...MiddlewareFunc) http.HandlerFunc {
 		}
 
 		h.Error()(w, r, err)
-
-		return
 	}
 }

@@ -10,14 +10,15 @@ import (
 	"github.com/snicol/yael"
 )
 
-func (rpc *Handler[Req, Res]) Error() rf.ErrorHandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request, err error) {
+// Error returns the rf.ErrorHandlerFunc for this RPC handler.
+func (*Handler[Req, Res]) Error() rf.ErrorHandlerFunc {
+	return func(w http.ResponseWriter, _ *http.Request, err error) {
 		yaelErr := &yael.E{}
 
 		ok := errors.As(err, &yaelErr)
 		if !ok {
 			unknown := yael.New("unknown")
-			unknownJSON, _ := json.Marshal(unknown)
+			unknownJSON, _ := json.Marshal(unknown) //nolint:errcheck // yael.E is always marshallable
 			result(w, string(unknownJSON), http.StatusInternalServerError, defaultContentType)
 			return
 		}
