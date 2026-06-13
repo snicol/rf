@@ -5,9 +5,10 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/snicol/rf"
 	"github.com/snicol/yael"
 	"github.com/xeipuuv/gojsonschema"
+
+	"github.com/snicol/rf"
 )
 
 func (h *Handler[Req, Res]) Handle() rf.HandlerFunc {
@@ -36,7 +37,7 @@ func (h *Handler[Req, Res]) Handle() rf.HandlerFunc {
 		}
 
 		if res == *new(Res) {
-			result(w, "", http.StatusNoContent, nil)
+			result(w, "", http.StatusNoContent, "")
 			return nil
 		}
 
@@ -45,7 +46,8 @@ func (h *Handler[Req, Res]) Handle() rf.HandlerFunc {
 			return err
 		}
 
-		result(w, string(resp), http.StatusOK, &defaultContentType)
+		result(w, string(resp), http.StatusOK, defaultContentType)
+
 		return nil
 	}
 }
@@ -56,6 +58,7 @@ func validateBody(body []byte, schema gojsonschema.JSONLoader) error {
 	}
 
 	bodyLoader := gojsonschema.NewBytesLoader(body)
+
 	schemaRes, err := gojsonschema.Validate(schema, bodyLoader)
 	if err != nil {
 		return err
@@ -67,13 +70,14 @@ func validateBody(body []byte, schema gojsonschema.JSONLoader) error {
 
 	yErr := yael.New(yael.BadRequest)
 
-	yErr.Meta = map[string]interface{}{
-		"schema_error": make([]map[string]interface{}, len(schemaRes.Errors())),
+	yErr.Meta = map[string]any{
+		"schema_error": make([]map[string]any, len(schemaRes.Errors())),
 	}
 
 	for i, reason := range schemaRes.Errors() {
-		seMeta := yErr.Meta["schema_error"].([]map[string]interface{})
-		seMeta[i] = map[string]interface{}{
+		seMeta := yErr.Meta["schema_error"].([]map[string]any)
+
+		seMeta[i] = map[string]any{
 			"description": reason.Description(),
 			"field":       reason.Field(),
 			"type":        reason.Type(),
@@ -83,14 +87,12 @@ func validateBody(body []byte, schema gojsonschema.JSONLoader) error {
 	return yErr
 }
 
-func result(w http.ResponseWriter, body string, statusCode int, contentType *string) {
-	var headerContentType = "text/plain"
-
-	if contentType != nil {
-		headerContentType = *contentType
+func result(w http.ResponseWriter, body string, statusCode int, contentType string) {
+	if contentType == "" {
+		contentType = "text/plain"
 	}
 
-	w.Header().Add("Content-Type", headerContentType)
+	w.Header().Add("Content-Type", contentType)
 	w.WriteHeader(statusCode)
 	w.Write([]byte(body))
 }

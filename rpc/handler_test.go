@@ -77,7 +77,7 @@ func TestHandle_MultipartJSONIsRejected(t *testing.T) {
 
 func TestError_NonYaelErrorIs500(t *testing.T) {
 	h := newEchoHandler()
-	req := httptest.NewRequest(http.MethodPost, "/", nil)
+	req := httptest.NewRequest(http.MethodPost, "/", http.NoBody)
 	w := httptest.NewRecorder()
 
 	h.Error()(w, req, errors.New("some internal error"))

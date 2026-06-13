@@ -1,12 +1,14 @@
 package middleware
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 	"time"
 
-	"github.com/snicol/rf"
 	"github.com/snicol/yael"
+
+	"github.com/snicol/rf"
 )
 
 const LoggerKey = "logger"
@@ -15,6 +17,7 @@ func Logger(logger *slog.Logger) rf.MiddlewareFunc {
 	if logger == nil {
 		logger = slog.Default()
 	}
+
 	return func(next rf.HandlerFunc) rf.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) error {
 			sr := &statusRecorder{ResponseWriter: w}
@@ -33,7 +36,9 @@ func Logger(logger *slog.Logger) rf.MiddlewareFunc {
 				return nil
 			}
 
-			yaelErr, ok := err.(*yael.E)
+			yaelErr := &yael.E{}
+
+			ok := errors.As(err, &yaelErr)
 			if !ok {
 				base.Error("internal server error", slog.String("error", err.Error()))
 				return err
@@ -64,5 +69,6 @@ func (sr *statusRecorder) statusCode() int {
 	if sr.status == 0 {
 		return http.StatusOK
 	}
+
 	return sr.status
 }

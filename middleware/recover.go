@@ -14,9 +14,11 @@ func Recover(logger *slog.Logger) rf.MiddlewareFunc {
 	if logger == nil {
 		logger = slog.Default()
 	}
+
 	return func(next rf.HandlerFunc) rf.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) (retErr error) {
 			start := time.Now()
+
 			defer func() {
 				p := recover()
 				if p == nil {
@@ -33,8 +35,10 @@ func Recover(logger *slog.Logger) rf.MiddlewareFunc {
 				)
 
 				w.WriteHeader(http.StatusInternalServerError)
+
 				retErr = nil
 			}()
+
 			return next(w, r)
 		}
 	}

@@ -20,7 +20,7 @@ const (
 
 type Handler struct {
 	reqType RequestType
-	fn      interface{}
+	fn      any
 }
 
 type Response struct {
@@ -29,7 +29,7 @@ type Response struct {
 	Headers    map[string]string
 }
 
-func NewHandler(reqType RequestType, fn interface{}) *Handler {
+func NewHandler(reqType RequestType, fn any) *Handler {
 	err := validateHandler(fn)
 	if err != nil {
 		panic(err)
@@ -51,6 +51,7 @@ func (h *Handler) Handle() rf.HandlerFunc {
 		t := v.Type()
 
 		req := reflect.New(t.In(1).Elem())
+
 		err := h.decode(req.Interface(), r)
 		if err != nil {
 			return err
@@ -97,7 +98,7 @@ func (h *Handler) Error() rf.ErrorHandlerFunc {
 	}
 }
 
-func (h *Handler) decode(in interface{}, r *http.Request) error {
+func (h *Handler) decode(in any, r *http.Request) error {
 	switch h.reqType {
 	case GetParams:
 		if r.Method != http.MethodGet {
@@ -121,13 +122,15 @@ func (h *Handler) decode(in interface{}, r *http.Request) error {
 	}
 }
 
-func validateHandler(fn interface{}) error {
+func validateHandler(fn any) error {
 	v := reflect.ValueOf(fn)
 	t := v.Type()
 
-	var errorType = reflect.TypeOf((*error)(nil)).Elem()
-	var contextType = reflect.TypeOf((*context.Context)(nil)).Elem()
-	var responseType = reflect.TypeOf((*Response)(nil)).Elem()
+	var (
+		errorType    = reflect.TypeOf((*error)(nil)).Elem()
+		contextType  = reflect.TypeOf((*context.Context)(nil)).Elem()
+		responseType = reflect.TypeOf((*Response)(nil)).Elem()
+	)
 
 	if t.Kind() != reflect.Func {
 		return errors.New("handler must be a function")
