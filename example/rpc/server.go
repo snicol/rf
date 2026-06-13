@@ -1,3 +1,4 @@
+// Package main demonstrates usage of the rf/rpc handler type with jsonschema validation.
 package main
 
 import (
@@ -25,12 +26,13 @@ type Response struct {
 	Output string `json:"output"`
 }
 
-func Example(ctx context.Context, req *Request) (*Response, error) {
+func Example(_ context.Context, req *Request) (*Response, error) {
 	return &Response{
 		Output: req.Input + " and some output.",
 	}, nil
 }
 
+//nolint:gochecknoglobals // example global schema loader
 var schema = gojsonschema.NewStringLoader(`{
 	"type": "object",
 	"additionalProperties": false,
@@ -45,7 +47,7 @@ var schema = gojsonschema.NewStringLoader(`{
 	}
 }`)
 
-func example_mux() {
+func exampleMux() { //nolint:unused // demonstrates stdlib mux usage alongside the chi example in main
 	mux := http.NewServeMux()
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
@@ -60,9 +62,9 @@ func example_mux() {
 	srv := &http.Server{
 		Addr:         ":3003",
 		Handler:      mux,
-		ReadTimeout:  5 * time.Second,
+		ReadTimeout:  5 * time.Second, //nolint:mnd // example server timeouts
 		WriteTimeout: 10 * time.Second,
-		IdleTimeout:  120 * time.Second,
+		IdleTimeout:  120 * time.Second, //nolint:mnd // example server timeouts
 	}
 	log.Println(srv.ListenAndServe())
 }
@@ -85,9 +87,9 @@ func main() {
 	srv := &http.Server{
 		Addr:         ":3003",
 		Handler:      r,
-		ReadTimeout:  5 * time.Second,
+		ReadTimeout:  5 * time.Second, //nolint:mnd // example server timeouts
 		WriteTimeout: 10 * time.Second,
-		IdleTimeout:  120 * time.Second,
+		IdleTimeout:  120 * time.Second, //nolint:mnd // example server timeouts
 	}
 	log.Println(srv.ListenAndServe())
 }
