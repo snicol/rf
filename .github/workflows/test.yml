@@ -24,6 +24,6 @@ jobs:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -o pipefail
-          go test -v ./... 2>&1 | reviewdog -f=go-test -reporter=github-check -name=test
+          go test -json ./... 2>&1 | reviewdog -f=go-test-json -reporter=github-check -name=test
       - name: Build examples
         run: go build ./example/...
