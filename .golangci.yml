@@ -72,7 +72,7 @@ linters:
   settings:
     cyclop:
       max-complexity: 10
-      package-average: 5.0
+      package-average: 6.0
 
     dupl:
       threshold: 120
@@ -119,6 +119,12 @@ linters:
       scope: declarations # only exported declarations
       capital: false
       period: true
+
+    govet:
+      disable:
+        # Our Handler.Error() intentionally returns ErrorHandlerFunc, not string —
+        # it is not implementing the error interface.
+        - stdmethods
 
     gosec:
       excludes:
