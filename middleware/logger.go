@@ -1,20 +1,25 @@
 package middleware
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 	"time"
 
-	"github.com/snicol/rf"
 	"github.com/snicol/yael"
+
+	"github.com/snicol/rf"
 )
 
+// LoggerKey is the context key used to store the logger instance.
 const LoggerKey = "logger"
 
+// Logger returns middleware that logs each request with timing and status information.
 func Logger(logger *slog.Logger) rf.MiddlewareFunc {
 	if logger == nil {
 		logger = slog.Default()
 	}
+
 	return func(next rf.HandlerFunc) rf.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) error {
 			sr := &statusRecorder{ResponseWriter: w}
@@ -30,12 +35,16 @@ func Logger(logger *slog.Logger) rf.MiddlewareFunc {
 
 			if err == nil {
 				base.Info("request handled", slog.Int("http_status_code", sr.statusCode()))
+
 				return nil
 			}
 
-			yaelErr, ok := err.(*yael.E)
+			yaelErr := &yael.E{}
+
+			ok := errors.As(err, &yaelErr)
 			if !ok {
 				base.Error("internal server error", slog.String("error", err.Error()))
+
 				return err
 			}
 
@@ -64,5 +73,6 @@ func (sr *statusRecorder) statusCode() int {
 	if sr.status == 0 {
 		return http.StatusOK
 	}
+
 	return sr.status
 }

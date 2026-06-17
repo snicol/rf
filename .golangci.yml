@@ -1,0 +1,328 @@
+# golangci-lint v2 configuration
+# https://golangci-lint.run/usage/configuration/
+version: 2
+
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  # Start from a clean slate — every linter below is explicitly opted-in.
+  default: none
+
+  enable:
+    - errcheck # unchecked errors
+    - govet # suspicious constructs (includes printf, shadow, composites …)
+    - ineffassign # assignments that are never used
+    - staticcheck # comprehensive static analysis (SA*, S1*, QF*, ST* checks)
+    - unused # unused code (replaces deprecated deadcode/varcheck/structcheck)
+
+    - bodyclose # HTTP response bodies must be closed
+    - contextcheck # context must be propagated, not ignored
+    - durationcheck # duration multiplied by duration is almost always a bug
+    - errorlint # incorrect error wrapping / comparison patterns
+    - exhaustive # switch statements must cover all enum values
+    - forcetypeassert # type assertions without ok-check will panic
+    - makezero # slice elements zeroed out after make — usually a bug
+    - nilerr # returning nil error while err != nil
+    - nilnil # functions returning (T, error) must not return (nil, nil)
+    - noctx # HTTP requests without context.Context
+    - rowserrcheck # sql.Rows.Err() must be checked
+    - sqlclosecheck # sql.Rows / sql.Stmt must be closed
+    - wastedassign # assignments whose result is never used
+
+    - gosec # common security problems (OWASP / CWE)
+
+    - errname # error types must be named *Error / *Err
+    - wrapcheck # errors from external packages must be wrapped
+
+    - cyclop # cyclomatic + package-average complexity
+    - dupl # copy-pasted code blocks
+    - funlen # functions that are too long
+    - gochecknoglobals # no package-level vars (exceptions below)
+    - gochecknoinits # no init() functions
+    - gocognit # cognitive complexity (harder than cyclomatic)
+    - goconst # string literals repeated ≥ N times → constant
+    - gocritic # large collection of opinionated checks
+    - gocyclo # cyclomatic complexity per function
+    - godot # comments must end with a period
+    - lll # line length
+    - misspell # common English spelling mistakes
+    - mnd # magic numbers (replaces deprecated gomnd)
+    - nakedret # naked returns in long functions
+    - nestif # deeply nested if blocks
+    - nolintlint # //nolint directives must be specific and explained
+    - predeclared # shadowing predeclared identifiers (len, cap, close …)
+    - reassign # reassignment of top-level package variables
+    - revive # extensible linter with many style rules
+    - unconvert # unnecessary type conversions
+    - unparam # function parameters that are always the same value
+    - usestdlibvars # prefer stdlib constants (http.MethodGet, etc.)
+    - whitespace # extraneous blank lines at function start/end
+    - wsl_v5
+
+    - paralleltest # table-driven tests should call t.Parallel()
+    - testifylint # correct usage of testify assertions
+    - thelper # test helpers must call t.Helper()
+
+    - sloglint # enforce slog usage conventions (snake_case keys, etc.)
+
+    - prealloc # slice/map pre-allocation opportunities
+
+  settings:
+    cyclop:
+      max-complexity: 10
+      package-average: 6.0
+
+    dupl:
+      threshold: 120
+
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+
+    exhaustive:
+      check:
+        - switch
+        - map
+      default-signifies-exhaustive: true
+
+    funlen:
+      lines: 80
+      statements: 50
+      ignore-comments: true
+
+    gocognit:
+      min-complexity: 15
+
+    goconst:
+      min-len: 3
+      min-occurrences: 3
+      ignore-tests: false
+
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - experimental
+        - opinionated
+        - performance
+        - style
+      disabled-checks:
+        - hugeParam # too noisy for infra code with large structs
+        - paramTypeCombine # style preference, not a correctness issue
+        - whyNoLint # covered by nolintlint
+
+    gocyclo:
+      min-complexity: 15
+
+    godot:
+      scope: declarations # only exported declarations
+      capital: false
+      period: true
+
+    govet:
+      disable:
+        # Our Handler.Error() intentionally returns ErrorHandlerFunc, not string —
+        # it is not implementing the error interface.
+        - stdmethods
+
+    gosec:
+      excludes:
+        # G104 (errors unhandled) is fully covered by errcheck — skip the duplicate
+        - G104
+
+    lll:
+      line-length: 120
+      tab-width: 4
+
+    misspell:
+      locale: US
+
+    mnd:
+      checks:
+        - argument
+        - case
+        - condition
+        - operation
+        - return
+        - assign
+      ignored-numbers:
+        - "0"
+        - "1"
+        - "2"
+        - "10"
+        - "100"
+      ignored-functions:
+        - os.Exit
+        - strconv.FormatInt
+        - strconv.ParseFloat
+        - strconv.ParseInt
+        - strconv.ParseUint
+        - time.Duration
+        - time.Sleep
+        - make
+        - "math/rand.New"
+
+    nakedret:
+      max-func-lines: 30
+
+    nestif:
+      min-complexity: 4
+
+    nolintlint:
+      allow-unused: false
+      require-explanation: true
+      require-specific: true
+
+    prealloc:
+      simple: true
+      range-loops: true
+      for-loops: false
+
+    sloglint:
+      # Enforce snake_case for all slog attribute keys.
+      key-naming-case: snake
+
+    revive:
+      severity: warning
+      rules:
+        - name: atomic
+        - name: blank-imports
+        - name: bool-literal-in-expr
+        - name: call-to-gc
+        - name: confusing-naming
+        - name: constant-logical-expr
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: deep-exit
+        - name: defer
+        - name: dot-imports
+        - name: duplicated-imports
+        - name: early-return
+        - name: empty-block
+        - name: error-naming
+        - name: error-return
+        - name: error-strings
+        - name: errorf
+        - name: exported
+          arguments:
+            - "disableStutteringCheck"
+        - name: increment-decrement
+        - name: indent-error-flow
+        - name: package-comments
+        - name: range
+        - name: receiver-naming
+        - name: redefines-builtin-id
+        - name: struct-tag
+        - name: superfluous-else
+        - name: time-naming
+        - name: unchecked-type-assertion
+        - name: unexported-return
+        - name: unnecessary-stmt
+        - name: unreachable-code
+        - name: unused-parameter
+        - name: unused-receiver
+        - name: use-any
+        - name: useless-break
+        - name: var-declaration
+        - name: var-naming
+
+    staticcheck:
+      checks:
+        - "all"
+        - "-ST1000" # package-level comments — enforced by revive instead
+
+    testifylint:
+      enable-all: true
+
+    unparam:
+      # Checking exported functions produces many false positives in library code.
+      check-exported: false
+
+    wrapcheck:
+      # Constructors / wrappers that are themselves wrapping — no double-wrap needed.
+      extra-ignore-sigs:
+        - .Errorf(
+        - errors.New(
+        - errors.Unwrap(
+        - errors.Join(
+        - fmt.Errorf(
+
+    wsl_v5:
+      allow-first-in-block: true
+      allow-whole-block: false
+
+      branch-max-lines: 4
+      case-max-lines: 0
+      default: all
+
+  exclusions:
+    # Treat generated files strictly — generated code should still be correct.
+    generated: strict
+
+    # Warn when an exclusion rule matches nothing (catches stale rules).
+    warn-unused: true
+
+    rules:
+      # Tests have different conventions: benchmarks use magic numbers,
+      # helpers may have longer functions, and gosec is relaxed.
+      - path: "_test\\.go"
+        linters:
+          - bodyclose # test servers are cleaned up by t.Cleanup
+          - cyclop # test helpers are intentionally longer
+          - dupl # table-driven tests repeat patterns intentionally
+          - forcetypeassert # panicking on wrong type in tests is acceptable
+          - funlen # test cases can be long
+          - gochecknoglobals # package-level test fixtures are idiomatic
+          - gocognit # test cases can be complex
+          - goconst # repeated test strings are clearer in-line
+          - gocyclo # same as gocognit
+          - gosec # test code is not production attack surface
+          - mnd # magic numbers in test expectations are fine
+          - noctx # test HTTP calls often use context.Background()
+          - paralleltest # not every test must be parallel
+          - wrapcheck # test assertions don't need wrapping
+          - wsl_v5 # test code has different whitespace conventions
+      - path: "^cmd/"
+        linters:
+          - gochecknoglobals
+          - gochecknoinits
+          - exhaustive # CLI switch statements may intentionally have fallthrough
+
+      # The rpc package is intentionally named to match its domain; the stdlib net/rpc
+      # conflict warning is a false positive here.
+      - path: "^rpc/"
+        text: "avoid package names that conflict with Go standard library"
+        linters:
+          - revive
+
+      # ── Bootstrap / provisioning code ──────────────────────────────────────
+      # Setup code is inherently imperative and may be longer than normal.
+      - path: "orchestrator/bootstrap/"
+        linters:
+          - funlen
+          - cyclop
+          - gocognit
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+
+  settings:
+    gofmt:
+      rewrite-rules:
+        - pattern: "interface{}"
+          replacement: "any"
+
+    goimports:
+      local-prefixes:
+        - github.com/snicol/rf
+
+issues:
+  # Report every issue, not just the first N per linter / file.
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+  # Do not apply automatic fixes without an explicit --fix flag.
+  fix: false

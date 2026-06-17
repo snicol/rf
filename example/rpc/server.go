@@ -1,15 +1,17 @@
+// Package main demonstrates usage of the rf/rpc handler type with jsonschema validation.
 package main
 
 import (
 	"context"
+	"log"
+	"log/slog"
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/snicol/rf"
 	"github.com/snicol/rf/middleware"
 	"github.com/snicol/rf/rpc"
-
-	"log/slog"
-	"os"
 
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
@@ -24,12 +26,13 @@ type Response struct {
 	Output string `json:"output"`
 }
 
-func Example(ctx context.Context, req *Request) (*Response, error) {
+func Example(_ context.Context, req *Request) (*Response, error) {
 	return &Response{
 		Output: req.Input + " and some output.",
 	}, nil
 }
 
+//nolint:gochecknoglobals // example global schema loader
 var schema = gojsonschema.NewStringLoader(`{
 	"type": "object",
 	"additionalProperties": false,
@@ -44,16 +47,26 @@ var schema = gojsonschema.NewStringLoader(`{
 	}
 }`)
 
-func example_mux() {
+func exampleMux() { //nolint:unused // demonstrates stdlib mux usage alongside the chi example in main
 	mux := http.NewServeMux()
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	g := rf.NewHandlerGroup(rpc.DefaultMiddleware(), middleware.Logger(logger))
-	g := rf.NewHandlerGroup(rpc.DefaultMiddleware(), middleware.Logger(logger), middleware.Recover(logger))
+	g := rf.NewHandlerGroup(
+		rpc.DefaultMiddleware(),
+		middleware.Logger(logger),
+		middleware.Recover(logger),
+	)
 
 	mux.Handle("/example", g.Use(rpc.NewHandler(Example, schema)))
 
-	http.ListenAndServe(":3003", mux)
+	srv := &http.Server{
+		Addr:         ":3003",
+		Handler:      mux,
+		ReadTimeout:  5 * time.Second, //nolint:mnd // example server timeouts
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  120 * time.Second, //nolint:mnd // example server timeouts
+	}
+	log.Println(srv.ListenAndServe())
 }
 
 func main() {
@@ -63,10 +76,20 @@ func main() {
 	r.Use(chiMiddleware.StripSlashes)
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	g := rf.NewHandlerGroup(rpc.DefaultMiddleware(), middleware.Logger(logger))
-	g := rf.NewHandlerGroup(rpc.DefaultMiddleware(), middleware.Logger(logger), middleware.Recover(logger))
+	g := rf.NewHandlerGroup(
+		rpc.DefaultMiddleware(),
+		middleware.Logger(logger),
+		middleware.Recover(logger),
+	)
 
 	r.Post("/example", g.Use(rpc.NewHandler(Example, schema)))
 
-	http.ListenAndServe(":3003", r)
+	srv := &http.Server{
+		Addr:         ":3003",
+		Handler:      r,
+		ReadTimeout:  5 * time.Second, //nolint:mnd // example server timeouts
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  120 * time.Second, //nolint:mnd // example server timeouts
+	}
+	log.Println(srv.ListenAndServe())
 }

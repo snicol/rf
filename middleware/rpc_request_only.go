@@ -9,7 +9,7 @@ import (
 	"github.com/snicol/yael"
 )
 
-// RPCRequestOnly limits all requests to conform to our RPC request standard
+// RPCRequestOnly limits all requests to conform to our RPC request standard.
 func RPCRequestOnly() func(next rf.HandlerFunc) rf.HandlerFunc {
 	return func(next rf.HandlerFunc) rf.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) error {

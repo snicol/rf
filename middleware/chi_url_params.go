@@ -1,7 +1,9 @@
+// Package middleware provides rf-compatible middleware functions.
 package middleware
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/snicol/rf"
@@ -11,7 +13,7 @@ import (
 
 // ChiURLParams merges URL params (/books/{id}) into the *http.Request params
 // map for later use.
-// NOTE: this overrides any other GET paramaters with the same key
+// NOTE: this overrides any other GET parameters with the same key.
 func ChiURLParams() func(next rf.HandlerFunc) rf.HandlerFunc {
 	return func(next rf.HandlerFunc) rf.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) error {
@@ -26,9 +28,8 @@ func ChiURLParams() func(next rf.HandlerFunc) rf.HandlerFunc {
 
 			values := r.URL.Query()
 
-			err := r.ParseForm()
-			if err != nil {
-				return err
+			if err := r.ParseForm(); err != nil {
+				return fmt.Errorf("parsing form: %w", err)
 			}
 
 			form := r.PostForm

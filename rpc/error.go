@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/snicol/rf"
@@ -9,22 +10,27 @@ import (
 	"github.com/snicol/yael"
 )
 
-func (rpc *Handler[Req, Res]) Error() rf.ErrorHandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request, err error) {
-		yaelErr, ok := err.(*yael.E)
+// Error returns the rf.ErrorHandlerFunc for this RPC handler.
+func (*Handler[Req, Res]) Error() rf.ErrorHandlerFunc {
+	return func(w http.ResponseWriter, _ *http.Request, err error) {
+		yaelErr := &yael.E{}
+
+		ok := errors.As(err, &yaelErr)
 		if !ok {
 			unknown := yael.New("unknown")
-			unknownJSON, _ := json.Marshal(unknown)
-			result(w, string(unknownJSON), http.StatusInternalServerError, &defaultContentType)
+			unknownJSON, _ := json.Marshal(unknown) //nolint:errcheck // yael.E is always marshallable
+			result(w, string(unknownJSON), http.StatusInternalServerError, defaultContentType)
+
 			return
 		}
 
 		yaelJSON, err := json.Marshal(yaelErr)
 		if err != nil {
-			result(w, err.Error(), http.StatusInternalServerError, nil)
+			result(w, err.Error(), http.StatusInternalServerError, "")
+
 			return
 		}
 
-		result(w, string(yaelJSON), yael.StatusCode(*yaelErr), &defaultContentType)
+		result(w, string(yaelJSON), yael.StatusCode(*yaelErr), defaultContentType)
 	}
 }
