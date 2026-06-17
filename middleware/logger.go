@@ -35,6 +35,7 @@ func Logger(logger *slog.Logger) rf.MiddlewareFunc {
 
 			if err == nil {
 				base.Info("request handled", slog.Int("http_status_code", sr.statusCode()))
+
 				return nil
 			}
 
@@ -43,6 +44,7 @@ func Logger(logger *slog.Logger) rf.MiddlewareFunc {
 			ok := errors.As(err, &yaelErr)
 			if !ok {
 				base.Error("internal server error", slog.String("error", err.Error()))
+
 				return err
 			}
 

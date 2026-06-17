@@ -289,6 +289,13 @@ linters:
           - gochecknoinits
           - exhaustive # CLI switch statements may intentionally have fallthrough
 
+      # The rpc package is intentionally named to match its domain; the stdlib net/rpc
+      # conflict warning is a false positive here.
+      - path: "^rpc/"
+        text: "avoid package names that conflict with Go standard library"
+        linters:
+          - revive
+
       # ── Bootstrap / provisioning code ──────────────────────────────────────
       # Setup code is inherently imperative and may be longer than normal.
       - path: "orchestrator/bootstrap/"

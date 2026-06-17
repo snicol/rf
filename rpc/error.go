@@ -20,12 +20,14 @@ func (*Handler[Req, Res]) Error() rf.ErrorHandlerFunc {
 			unknown := yael.New("unknown")
 			unknownJSON, _ := json.Marshal(unknown) //nolint:errcheck // yael.E is always marshallable
 			result(w, string(unknownJSON), http.StatusInternalServerError, defaultContentType)
+
 			return
 		}
 
 		yaelJSON, err := json.Marshal(yaelErr)
 		if err != nil {
 			result(w, err.Error(), http.StatusInternalServerError, "")
+
 			return
 		}
 

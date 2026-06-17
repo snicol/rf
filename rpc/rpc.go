@@ -1,5 +1,5 @@
 // Package rpc provides a JSON-based RPC handler with jsonschema validation and yael error handling.
-package rpc //nolint:revive // name matches the RPC domain, stdlib net/rpc conflict is acceptable
+package rpc
 
 import (
 	"context"

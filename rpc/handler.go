@@ -27,9 +27,10 @@ func (h *Handler[Req, Res]) Handle() rf.HandlerFunc {
 		}
 
 		var req Req
+
 		if len(body) > 0 {
 			if err := json.Unmarshal(body, &req); err != nil {
-				return fmt.Errorf("unmarshalling body: %w", err)
+				return fmt.Errorf("unmarshaling body: %w", err)
 			}
 		}
 
@@ -40,6 +41,7 @@ func (h *Handler[Req, Res]) Handle() rf.HandlerFunc {
 
 		if res == *new(Res) {
 			result(w, "", http.StatusNoContent, "")
+
 			return nil
 		}
 

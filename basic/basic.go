@@ -168,7 +168,7 @@ func validateHandler(fn any) error {
 		return errors.New("must take context as first argument")
 	}
 
-	if t.In(1).Kind() != reflect.Ptr {
+	if t.In(1).Kind() != reflect.Pointer {
 		return errors.New("requset arg must be a ptr")
 	}
 
