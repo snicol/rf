@@ -28,7 +28,8 @@ See `example/{basic,rpc}` for the best examples of how each type works.
 ```go
 func main() {
     // creates a handler group which will apply a default stack of middleware
-    g := rf.NewHandlerGroup(rpc.DefaultMiddleware(), middleware.Logger(logger))
+    // Tracer must come before Logger and Recover so the span is in context
+    g := rf.NewHandlerGroup(rpc.DefaultMiddleware(), middleware.Tracer(), middleware.Logger(), middleware.Recover())
 
     // RPC:
     // wrap the Example handler func (see below example) with a schema loaded using

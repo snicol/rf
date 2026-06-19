@@ -6,53 +6,55 @@ import (
 	"net/http"
 	"time"
 
+	semconv "go.opentelemetry.io/otel/semconv/v1.32.0"
+
 	"github.com/snicol/yael"
 
 	"github.com/snicol/rf"
 )
 
-// LoggerKey is the context key used to store the logger instance.
-const LoggerKey = "logger"
+const tracerName = "github.com/snicol/rf/middleware"
 
 // Logger returns middleware that logs each request with timing and status information.
-func Logger(logger *slog.Logger) rf.MiddlewareFunc {
-	if logger == nil {
-		logger = slog.Default()
-	}
+// It should be used after Tracer so that log records are correlated to the active span
+// via the request context.
+func Logger(opts ...Option) rf.MiddlewareFunc {
+	o := applyOptions(opts)
 
 	return func(next rf.HandlerFunc) rf.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) error {
+			ctx := r.Context()
 			sr := &statusRecorder{ResponseWriter: w}
-
 			start := time.Now()
 			err := next(sr, r)
 
-			base := logger.With(
-				slog.String("http_method", r.Method),
-				slog.String("http_path", r.URL.Path),
-				slog.Int64("req_duration_us", time.Since(start).Microseconds()),
+			status := sr.statusCode()
+			duration := time.Since(start).Microseconds()
+
+			base := o.logger.With(
+				slog.String(string(semconv.HTTPRequestMethodKey), r.Method),
+				slog.String(string(semconv.URLPathKey), r.URL.Path),
+				slog.Int64("req_duration_us", duration),
 			)
 
 			if err == nil {
-				base.Info("request handled", slog.Int("http_status_code", sr.statusCode()))
+				base.InfoContext(ctx, "request handled", slog.Int(string(semconv.HTTPResponseStatusCodeKey), status))
 
 				return nil
 			}
 
 			yaelErr := &yael.E{}
-
-			ok := errors.As(err, &yaelErr)
-			if !ok {
-				base.Error("internal server error", slog.String("error", err.Error()))
+			if errors.As(err, &yaelErr) {
+				base.WarnContext(ctx, yaelErr.Code,
+					slog.String("code", yaelErr.Code),
+					slog.Any("meta", yaelErr.Meta),
+					slog.Int(string(semconv.HTTPResponseStatusCodeKey), yael.StatusCode(*yaelErr)),
+				)
 
 				return err
 			}
 
-			base.Warn(yaelErr.Code,
-				slog.String("code", yaelErr.Code),
-				slog.Any("meta", yaelErr.Meta),
-				slog.Int("http_status_code", yael.StatusCode(*yaelErr)),
-			)
+			base.ErrorContext(ctx, "internal server error", slog.String("error", err.Error()))
 
 			return err
 		}

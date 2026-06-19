@@ -50,11 +50,13 @@ var schema = gojsonschema.NewStringLoader(`{
 func exampleMux() { //nolint:unused // demonstrates stdlib mux usage alongside the chi example in main
 	mux := http.NewServeMux()
 
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+
 	g := rf.NewHandlerGroup(
 		rpc.DefaultMiddleware(),
-		middleware.Logger(logger),
-		middleware.Recover(logger),
+		middleware.Tracer(),
+		middleware.Logger(),
+		middleware.Recover(),
 	)
 
 	mux.Handle("/example", g.Use(rpc.NewHandler(Example, schema)))
@@ -75,11 +77,13 @@ func main() {
 	r.Use(chiMiddleware.RequestID)
 	r.Use(chiMiddleware.StripSlashes)
 
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+
 	g := rf.NewHandlerGroup(
 		rpc.DefaultMiddleware(),
-		middleware.Logger(logger),
-		middleware.Recover(logger),
+		middleware.Tracer(),
+		middleware.Logger(),
+		middleware.Recover(),
 	)
 
 	r.Post("/example", g.Use(rpc.NewHandler(Example, schema)))
