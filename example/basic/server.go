@@ -45,12 +45,14 @@ func JSONEchoExample(_ context.Context, req *Request) (*basic.Response, error) {
 
 func main() {
 	mux := http.NewServeMux()
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 
 	g := rf.NewHandlerGroup(
 		nil,
-		middleware.Logger(logger),
-		middleware.Recover(logger),
+		middleware.Tracer(),
+		middleware.Logger(),
+		middleware.Recover(),
 	)
 
 	mux.Handle("/example", g.Use(basic.NewHandler(basic.GetParams, Example)))

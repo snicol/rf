@@ -7,14 +7,16 @@ import (
 	"runtime/debug"
 	"time"
 
+	"go.opentelemetry.io/otel/codes"
+	semconv "go.opentelemetry.io/otel/semconv/v1.32.0"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/snicol/rf"
 )
 
 // Recover returns middleware that recovers from panics and logs them.
-func Recover(logger *slog.Logger) rf.MiddlewareFunc {
-	if logger == nil {
-		logger = slog.Default()
-	}
+func Recover(opts ...Option) rf.MiddlewareFunc {
+	o := applyOptions(opts)
 
 	return func(next rf.HandlerFunc) rf.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) (retErr error) {
@@ -26,11 +28,17 @@ func Recover(logger *slog.Logger) rf.MiddlewareFunc {
 					return
 				}
 
-				logger.ErrorContext(r.Context(), "panic recovered",
-					slog.String("http_method", r.Method),
-					slog.String("http_path", r.URL.Path),
+				ctx := r.Context()
+
+				span := trace.SpanFromContext(ctx)
+				span.RecordError(fmt.Errorf("%v", p))
+				span.SetStatus(codes.Error, "panic recovered")
+
+				o.logger.ErrorContext(ctx, "panic recovered",
+					slog.String(string(semconv.HTTPRequestMethodKey), r.Method),
+					slog.String(string(semconv.URLPathKey), r.URL.Path),
 					slog.Int64("req_duration_us", time.Since(start).Microseconds()),
-					slog.Int("http_status_code", http.StatusInternalServerError),
+					slog.Int(string(semconv.HTTPResponseStatusCodeKey), http.StatusInternalServerError),
 					slog.String("panic", fmt.Sprint(p)),
 					slog.String("stack_trace", string(debug.Stack())),
 				)
