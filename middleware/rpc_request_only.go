@@ -18,7 +18,7 @@ func RPCRequestOnly() func(next rf.HandlerFunc) rf.HandlerFunc {
 			}
 
 			if !strings.Contains(r.Header.Get("Content-Type"), "application/json") {
-				return yael.New(yael.UnprocessableEntity)
+				return yael.New(yael.BadRequest)
 			}
 
 			return next(w, r)
