@@ -1,9 +1,15 @@
-# rf
+# rf — Request Framework
 
-Request Framework - `rf` is a very light set of interfaces and handler types
-that I've used on personal projects. After building a few things with the same
-pieces of code strewn around I decided to standardise the request/response
-patterns.
+[![Go Reference](https://pkg.go.dev/badge/github.com/snicol/rf.svg)](https://pkg.go.dev/github.com/snicol/rf)
+[![Test](https://github.com/snicol/rf/actions/workflows/test.yml/badge.svg)](https://github.com/snicol/rf/actions/workflows/test.yml)
+[![Lint](https://github.com/snicol/rf/actions/workflows/lint.yml/badge.svg)](https://github.com/snicol/rf/actions/workflows/lint.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/snicol/rf)](https://goreportcard.com/report/github.com/snicol/rf)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+`rf` is a lightweight Go library of interfaces and handler types for building
+HTTP services on top of `net/http`. It standardises the request/response
+patterns I kept re-implementing across personal projects, while staying small
+enough to drop into any router.
 
 Everything works with Go's `net/http` directly, meaning you can bring your own
 middleware, use Chi or http.Mux! You can rework middleware to gain advantage of
@@ -85,11 +91,28 @@ client.
 If no status code is set, it default to 200. If no headers are set, it default
 to `Content-Type: text/plain` only.
 
+## Middleware
+
+The `middleware` package ships a small stack of reusable middleware. Each is an
+`rf.MiddlewareFunc`, so they compose with `NewHandlerGroup` and `Use`:
+
+* `middleware.Logger()` - request logging via `slog`
+* `middleware.Tracer()` - OpenTelemetry span per request (must come before
+  `Logger` and `Recover` so the span is in context)
+* `middleware.Recover()` - recovers from panics in downstream handlers
+* `middleware.RPCRequestOnly()` - rejects non-RPC requests
+* `middleware.ChiURLParams()` - exposes Chi URL params to handlers
+
+`Logger`, `Tracer`, and `Recover` accept options such as
+`middleware.WithLogger(...)` and `middleware.WithTracer(...)`. RPC handlers also
+get `rpc.DefaultMiddleware()` as a convenient base stack.
+
 ## Notes
 
-The next things that I will be adding are tests, a few more useful
-middlewares (including moving shared logic from handlers into middleware). A lot
-more of the code will be commented when it's more concrete.
+This is a personal library: I will continue to chop and change features over
+time as my projects evolve. **There are no safety or security guarantees with
+this software!**
 
-**I will continue to chop and change features over time as my personal projects
-evolve. There are no safety or security guarantees with this software!**
+## License
+
+Released under the [MIT License](LICENSE).
