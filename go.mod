@@ -3,7 +3,7 @@ module github.com/snicol/rf
 go 1.25.0
 
 require (
-	github.com/go-chi/chi/v5 v5.3.0
+	github.com/go-chi/chi/v5 v5.3.1
 	github.com/gorilla/schema v1.4.1
 	github.com/snicol/yael v1.0.0
 	github.com/xeipuuv/gojsonschema v1.2.0
